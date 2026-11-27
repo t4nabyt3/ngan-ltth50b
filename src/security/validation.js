@@ -11,7 +11,7 @@ const HIDDEN_CHARACTERS = /[\u0000-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2060-
 // Chi danh dau cac mau script pho bien. React van tu dong escape text khi hien thi.
 const SUSPICIOUS_TEXT = /<\s*\/?\s*(script|iframe|object|embed)\b|javascript\s*:|data\s*:\s*text\/html|\bon[a-z0-9_-]+\s*=|document\s*\.\s*cookie/i
 
-const ALLOWED_PAYMENTS = ['cod', 'bank', 'wallet']
+const ALLOWED_PAYMENTS = ['cod', 'bank', 'wallet', 'visa', 'mastercard', 'paypal']
 
 export function cleanText(value, maxLength = 300) {
   return String(value ?? '')

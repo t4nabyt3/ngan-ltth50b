@@ -1,131 +1,57 @@
 import { useState } from 'react'
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  Check,
-  CircleCheck,
-  ExternalLink,
-  Fingerprint,
-  PackageCheck,
-  ShieldCheck,
-  ShoppingBag,
-} from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, ExternalLink, ShoppingBag } from 'lucide-react'
 import ProductCard from './ProductCard'
-import { formatPrice, products } from '../data/products'
+import { products } from '../data/products'
+import { blackFridayPrice, blackFridayRate, formatCents, isBlackFridayOffer } from '../data/commerce'
+import OfferPrice from './OfferPrice'
 
-export default function ProductPage({ product, onBack, onAdd, onOpenProduct, cartQuantity = 0 }) {
-  const [useFallback, setUseFallback] = useState(false)
+export default function ProductPage({ product, onBack, onAdd, onOpenProduct }) {
+  const [optionId, setOptionId] = useState(() => (product.options.find((item) => item.available && item.cents === product.priceCents) || product.options[0])?.id)
   const [quantity, setQuantity] = useState(1)
-
-  if (!product) return null
-
-  const relatedProducts = products.filter((item) => item.id !== product.id)
-  const imageSrc = useFallback ? product.fallbackImage : product.imageUrl
+  const option = product.options.find((item) => item.id === optionId)
+  const offer = isBlackFridayOffer(product, option?.available)
+  const image = option?.image || product.image
+  const related = products.filter((item) => item.id !== product.id && item.category === product.category && item.available).slice(0, 3)
 
   return (
     <main className="product-detail-page">
       <div className="page-shell">
-        <div className="product-breadcrumbs">
-          <button onClick={onBack}><ArrowLeft size={15} /> Tất cả sản phẩm</button>
-          <span>/</span>
-          <span>{product.category}</span>
-          <span>/</span>
-          <strong>{product.shortName}</strong>
-        </div>
-
+        <div className="product-breadcrumbs"><button onClick={onBack}><ArrowLeft size={16} /> Danh mục</button><span>/</span><span>{product.category}</span></div>
         <section className="product-detail-hero">
-          <div className="product-detail-visual">
-            <div className="product-detail-grid" />
-            <span className="product-detail-index">{product.tag}</span>
-            <span className="product-detail-badge">{product.badge}</span>
-            <div className="product-detail-orbit product-detail-orbit-a" />
-            <div className="product-detail-orbit product-detail-orbit-b" />
-            <img
-              src={imageSrc}
-              alt={product.imageAlt}
-              onError={() => setUseFallback(true)}
-            />
-            <span className="product-detail-image-caption">PRODUCT VISUAL / {product.id.toUpperCase()}</span>
+          <div className="product-detail-visual glitch-box">
+            {offer && <span className="offer-badge">BLACK FRIDAY <b>−{blackFridayRate}%</b></span>}
+            {image ? <img src={image} alt={product.name} /> : <span className="image-unavailable">Hak5 chưa có ảnh riêng</span>}
           </div>
-
           <div className="product-detail-copy">
-            <div className="section-eyebrow"><span>CHI TIẾT SẢN PHẨM</span> / {product.category.toUpperCase()}</div>
-            <div className="product-detail-status"><i /> THIẾT BỊ KIỂM THỬ CHUYÊN DỤNG</div>
-            <h1>{product.name}<em>.</em></h1>
+            <div className="section-eyebrow">{product.category}</div>
+            <h1>{product.name}</h1>
             <p className="product-detail-description">{product.description}</p>
-
-            <div className="product-detail-price-row">
-              <div>
-                <span>GIÁ THAM CHIẾU</span>
-                <strong>{formatPrice(product.price)}</strong>
-                <small>{product.sourcePrice} · Theo nguồn Hak5</small>
+            <div className="product-detail-price-row"><div><span>{offer ? 'GIÁ BLACK FRIDAY' : product.configurable ? 'GIÁ TỪ' : 'GIÁ THAM CHIẾU'}</span><OfferPrice cents={option?.cents ?? product.priceCents} offer={offer} /><small>{product.configurable ? 'Chọn cấu hình trên trang Hak5' : option.available ? (offer ? 'Tự áp dụng khi thêm vào giỏ' : 'Có thể đặt thử') : 'Hak5 báo hết hàng'}</small></div></div>
+            {!product.digital && option?.available && <p className="import-product-note">Hàng đặt nhập · Dự kiến 12–22 ngày làm việc. Phí nhập và giao hàng tính khi đặt.</p>}
+            {product.options.length > 1 && <label className="field option-field"><span>Phiên bản</span><select className="ui-select" value={optionId} onChange={(event) => { setOptionId(event.target.value); setQuantity(1) }}>
+              {product.options.map((item) => <option key={item.id} value={item.id}>{item.label} · {formatCents(isBlackFridayOffer(product, item.available) ? blackFridayPrice(item.cents) : item.cents)}{item.available ? '' : ' · Hết hàng'}</option>)}
+            </select>{image && !option.image && <small>Ảnh có thể minh họa phiên bản khác trong cùng dòng.</small>}</label>}
+            {option?.available && <div className="product-buy-row">
+              <div className="product-quantity" aria-label="Số lượng">
+                <button type="button" onClick={() => setQuantity(quantity - 1)} disabled={quantity === 1} aria-label="Giảm số lượng">−</button>
+                <output>{quantity}</output>
+                <button type="button" onClick={() => setQuantity(quantity + 1)} disabled={quantity === 10} aria-label="Tăng số lượng">+</button>
               </div>
-              <span className="product-detail-price-note">USD<br />REFERENCE</span>
-            </div>
-
-            <div className="product-buy-row">
-              <div className="product-quantity" aria-label="Chọn số lượng">
-                <button type="button" onClick={() => setQuantity((current) => Math.max(1, current - 1))} disabled={quantity <= 1} aria-label="Giảm số lượng">−</button>
-                <output aria-live="polite">{quantity}</output>
-                <button type="button" onClick={() => setQuantity((current) => Math.min(Math.max(1, 10 - cartQuantity), current + 1))} disabled={quantity + cartQuantity >= 10} aria-label="Tăng số lượng">+</button>
-              </div>
-              <small className="product-cart-count">Đang có {cartQuantity} trong giỏ</small>
-            </div>
+              <span className="text-sm text-neutral-600">{product.digital ? 'Sản phẩm số' : 'Tối đa 10 món mỗi biến thể'}</span>
+            </div>}
             <div className="product-detail-actions">
-              <button className="button button-acid" disabled={cartQuantity >= 10} onClick={() => { onAdd(product, quantity); setQuantity(1) }}>
-                <ShoppingBag size={17} /> {cartQuantity >= 10 ? 'Đã đạt giới hạn' : `Thêm ${quantity} vào giỏ`} <ArrowUpRight size={16} />
-              </button>
-              <a href={product.sourceUrl} target="_blank" rel="noreferrer">
-                Xem tại Hak5 <ExternalLink size={14} />
-              </a>
-            </div>
-            <div className="product-detail-assurance">
-              <span><ShieldCheck size={16} /> Demo mua hàng an toàn</span>
-              <span><PackageCheck size={16} /> Thanh toán mô phỏng</span>
+              {!product.configurable && <button className="button button-acid" disabled={!option.available} onClick={() => { onAdd(product, option, quantity); setQuantity(1) }}><ShoppingBag size={17} />{option.available ? 'Thêm vào giỏ' : 'Hết hàng'}</button>}
+              <a href={product.sourceUrl} target="_blank" rel="noreferrer">{product.configurable ? 'Xem cấu hình tại Hak5' : 'Nguồn Hak5'} <ExternalLink size={14} /></a>
             </div>
           </div>
         </section>
-
-        <section className="product-information-grid">
-          <article className="product-info-panel product-highlights-panel">
-            <div className="product-info-heading"><span>01 / TÍNH NĂNG</span><Fingerprint size={19} /></div>
-            <h2>Điểm nổi bật<br /><em>của thiết bị.</em></h2>
-            <div className="product-feature-list">
-              {product.highlights.map((highlight) => (
-                <div key={highlight}><span><Check size={14} /></span>{highlight}</div>
-              ))}
-            </div>
-          </article>
-          <article className="product-info-panel product-usage-panel">
-            <div className="product-info-heading"><span>02 / MỤC ĐÍCH SỬ DỤNG</span><ShieldCheck size={19} /></div>
-            <h2>Thiết kế cho<br /><em>mục tiêu rõ ràng.</em></h2>
-            <p>{product.suitableFor}</p>
-            <div className="product-usage-note">
-              <CircleCheck size={17} />
-              <span>Chỉ sử dụng trong môi trường lab hoặc hệ thống mà bạn có quyền kiểm thử bằng văn bản.</span>
-            </div>
-          </article>
-          <article className="product-info-panel product-reference-panel">
-            <div className="product-info-heading"><span>03 / THÔNG TIN SẢN PHẨM</span><ArrowUpRight size={19} /></div>
-            <div className="product-data-row"><span>Tên sản phẩm</span><strong>{product.name}</strong></div>
-            <div className="product-data-row"><span>Danh mục</span><strong>{product.category}</strong></div>
-            <div className="product-data-row"><span>Mã tham chiếu</span><strong>{product.id}</strong></div>
-            <div className="product-data-row"><span>Nguồn dữ liệu</span><a href={product.sourceUrl} target="_blank" rel="noreferrer">Hak5 Shop ↗</a></div>
-            <p className="product-source-note">Giá và thông tin hiển thị là dữ liệu tham chiếu, có thể thay đổi theo phiên bản và chính sách của nhà sản xuất.</p>
-          </article>
+        <section className="product-details-panels" aria-label="Thông tin sản phẩm">
+          <article><h2>Tính năng</h2><ul>{product.highlights.map((item) => <li key={item}>{item}</li>)}</ul></article>
+          <article><h2>Thông số</h2><ul>{product.specs.map((item) => <li key={item}>{item}</li>)}{option?.sku && <li>SKU Hak5: {option.sku}</li>}</ul>{!product.specs.length && <p>Hak5 chưa công bố thêm thông số trên trang sản phẩm.</p>}</article>
         </section>
-
-        <section className="related-products-section">
-          <div className="related-products-heading">
-            <div><div className="section-eyebrow"><span>SẢN PHẨM LIÊN QUAN</span></div><h2>Tiếp tục khám phá.</h2></div>
-            <button className="back-link" onClick={onBack}>Về danh mục <ArrowUpRight size={15} /></button>
-          </div>
-          <div className="product-grid related-product-grid">
-            {relatedProducts.map((item, index) => (
-              <ProductCard key={item.id} product={item} index={index} onAdd={onAdd} onDetail={onOpenProduct} />
-            ))}
-          </div>
-        </section>
+        {related.length > 0 && <section className="related-products-section"><div className="related-products-heading"><h2>Cùng danh mục</h2><button className="back-link" onClick={onBack}>Về danh mục <ArrowUpRight size={15} /></button></div>
+          <div className="product-grid related-product-grid">{related.map((item) => <ProductCard key={item.id} product={item} onAdd={onAdd} onDetail={onOpenProduct} />)}</div>
+        </section>}
       </div>
     </main>
   )

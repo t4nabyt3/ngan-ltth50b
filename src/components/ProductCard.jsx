@@ -1,86 +1,39 @@
-import { useEffect, useState } from 'react'
-import { ArrowUpRight, Check, Heart, Plus } from 'lucide-react'
-import { formatPrice } from '../data/products'
+import { ArrowUpRight, Plus } from 'lucide-react'
+import { blackFridayRate, isBlackFridayOffer } from '../data/commerce'
+import OfferPrice from './OfferPrice'
 
-export default function ProductCard({
-  product,
-  index,
-  onAdd,
-  onDetail,
-  quantityInCart = 0,
-  isSaved = false,
-  onToggleSaved,
-}) {
-  const [useFallback, setUseFallback] = useState(false)
-  const [justAdded, setJustAdded] = useState(false)
-
-  useEffect(() => {
-    if (!justAdded) return undefined
-    const timer = window.setTimeout(() => setJustAdded(false), 1100)
-    return () => window.clearTimeout(timer)
-  }, [justAdded])
-
-  const handleAdd = () => {
-    onAdd(product)
-    setJustAdded(true)
+export default function ProductCard({ product, onAdd, onDetail }) {
+  const open = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    onDetail(product)
   }
+  const href = `/product/${product.id}`
+  const offer = isBlackFridayOffer(product)
+  const from = product.configurable || product.options.length > 1
+  const option = product.options.find((item) => item.available)
 
   return (
-    <article className="product-card">
+    <article className={`product-card glitch-box${offer ? ' product-card-offer' : ''}`}>
       <div className="product-image-wrap">
-        <button
-          className="product-image-open"
-          type="button"
-          onClick={() => onDetail(product)}
-          aria-label={`Xem chi tiết ${product.name}`}
-        >
-          <span className="product-index">{product.tag}</span>
-          <img
-            className="product-image"
-            src={useFallback ? product.fallbackImage : product.imageUrl}
-            alt={product.imageAlt}
-            loading="lazy"
-            onError={() => setUseFallback(true)}
-          />
-          <span className="image-open-label">Xem sản phẩm <ArrowUpRight size={14} /></span>
-        </button>
-        <span className="product-badge">{product.badge}</span>
-        {onToggleSaved && (
-          <button
-            className={`save-product-button ${isSaved ? 'is-saved' : ''}`}
-            type="button"
-            onClick={() => onToggleSaved(product.id)}
-            aria-pressed={isSaved}
-            aria-label={isSaved ? `Bỏ lưu ${product.name}` : `Lưu ${product.name}`}
-            title={isSaved ? 'Bỏ lưu sản phẩm' : 'Lưu sản phẩm'}
-          >
-            <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} />
-          </button>
-        )}
+        <a className="product-image-open" href={href} onClick={open} aria-label={`Xem chi tiết ${product.name}`}>
+          {product.image ? <img className="product-image" src={product.image} alt="" loading="lazy" decoding="async" /> : <span className="image-unavailable">Hak5 chưa có ảnh riêng</span>}
+        </a>
+        {offer && <span className="offer-badge">BLACK FRIDAY <b>−{blackFridayRate}%</b></span>}
+        {!product.available && <span className="product-badge">{product.configurable ? 'Tùy cấu hình' : 'Hết hàng'}</span>}
       </div>
       <div className="product-card-content">
-        <div className="product-meta"><span>{product.category}</span><span className="product-dot" /></div>
-        <h3><button type="button" onClick={() => onDetail(product)}>{product.name}</button></h3>
+        <div className="product-meta"><span>{product.category}</span></div>
+        <h3><a href={href} onClick={open}>{product.name}</a></h3>
         <p>{product.description}</p>
-        <button className="product-details-link" type="button" onClick={() => onDetail(product)}>
-          Thông tin sản phẩm <ArrowUpRight size={14} />
-        </button>
         <div className="product-card-bottom">
           <div>
-            <span className="price-label">Giá tham chiếu</span>
-            <strong>{formatPrice(product.price)}</strong>
-            {quantityInCart > 0 && <small className="in-cart-note" aria-live="polite">Đang có {quantityInCart} trong giỏ</small>}
+            <span className="price-label">{offer ? (from ? 'Giá ưu đãi từ' : 'Giá ưu đãi') : from ? 'Giá từ' : 'Giá tham chiếu'}</span>
+            <OfferPrice cents={product.priceCents} offer={offer} />
           </div>
-          <button
-            className={`add-button ${justAdded ? 'is-added' : ''}`}
-            type="button"
-            onClick={handleAdd}
-            aria-label={quantityInCart >= 10 ? `${product.name} đã đạt giới hạn` : `Thêm ${product.name} vào giỏ hàng`}
-            title={quantityInCart >= 10 ? 'Đã đạt giới hạn 10 sản phẩm' : 'Thêm vào giỏ hàng'}
-            disabled={quantityInCart >= 10}
-          >
-            {justAdded ? <Check size={18} /> : <Plus size={18} />}
-          </button>
+          {product.available && (product.options.length > 1
+            ? <a className="add-button" href={href} onClick={open} title="Chọn phiên bản" aria-label={`Chọn phiên bản ${product.name}`}><ArrowUpRight size={18} /></a>
+            : <button className="add-button" onClick={() => onAdd(product, option)} title="Thêm vào giỏ" aria-label={`Thêm ${product.name} vào giỏ`}><Plus size={18} /></button>)}
         </div>
       </div>
     </article>

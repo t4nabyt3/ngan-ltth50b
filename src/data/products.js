@@ -1,63 +1,8 @@
-export const products = [
-  {
-    id: 'wifi-pineapple-mk7',
-    name: 'WiFi Pineapple Mark VII',
-    shortName: 'WiFi Pineapple',
-    category: 'Wi-Fi Audit',
-    badge: 'Wireless lab',
-    price: 250,
-    currency: 'USD',
-    sourcePrice: '$250.00',
-    sourceUrl: 'https://shop.hak5.org/products/wifi-pineapple',
-    imageUrl: 'https://shop.hak5.org/cdn/shop/products/wp-mk7_81d03a53-bf1a-426f-9425-a34c8b3d9c85_1600x.jpg?v=1599680489',
-    fallbackImage: '/images/wifi-pineapple.png',
-    imageAlt: 'Thiết bị WiFi Pineapple Mark VII với ba ăng-ten',
-    description: 'Nền tảng kiểm thử Wi-Fi di động dành cho đội ngũ Red Team, hỗ trợ khảo sát môi trường không dây và đánh giá cấu hình mạng trong phạm vi được cho phép.',
-    highlights: ['Ba radio chuyên dụng theo vai trò', 'Hỗ trợ 2.4 GHz; 5 GHz với mô-đun tương thích', 'Giao diện quản trị qua trình duyệt'],
-    suitableFor: 'Đánh giá bảo mật Wi-Fi trong lab hoặc dự án có văn bản ủy quyền.',
-    tag: '01 / WIRELESS',
-  },
-  {
-    id: 'usb-rubber-ducky',
-    name: 'USB Rubber Ducky',
-    shortName: 'USB Rubber Ducky',
-    category: 'USB HID',
-    badge: 'HID testing',
-    price: 100,
-    currency: 'USD',
-    sourcePrice: 'From $100.00',
-    sourceUrl: 'https://shop.hak5.org/products/usb-rubber-ducky',
-    imageUrl: 'https://shop.hak5.org/cdn/shop/products/usb-rubber-ducky_mk2_1600x.jpg?v=1659974440',
-    fallbackImage: '/images/rubber-ducky.png',
-    imageAlt: 'USB Rubber Ducky với đầu nối USB và bo mạch',
-    description: 'Thiết bị mô phỏng bàn phím USB, dùng để kiểm tra chính sách thiết bị HID, khả năng giám sát endpoint và quy trình ứng phó với hành vi nhập liệu tự động.',
-    highlights: ['Mô phỏng thiết bị bàn phím USB', 'Hỗ trợ DuckyScript', 'Phù hợp bài lab kiểm soát thiết bị ngoại vi'],
-    suitableFor: 'Đào tạo nhận diện rủi ro HID và kiểm thử endpoint có kiểm soát.',
-    tag: '02 / USB HID',
-  },
-  {
-    id: 'bash-bunny-mk2',
-    name: 'Bash Bunny Mark II',
-    shortName: 'Bash Bunny',
-    category: 'Multi-vector USB',
-    badge: 'Red team lab',
-    price: 200,
-    currency: 'USD',
-    sourcePrice: '$200.00',
-    sourceUrl: 'https://shop.hak5.org/products/bash-bunny',
-    imageUrl: 'https://shop.hak5.org/cdn/shop/products/bash-bunny-mk2_001_a71eaf45-5f2e-4156-ac45-5b782d25f62f_1600x.jpg?v=1624910237',
-    fallbackImage: '/images/bash-bunny.png',
-    imageAlt: 'Bash Bunny Mark II dạng USB màu đen với đèn báo và công tắc',
-    description: 'Nền tảng USB chạy Linux dành cho bài đánh giá đa giao diện, kết hợp các vai trò HID, Ethernet, serial và lưu trữ trong môi trường thử nghiệm được phê duyệt.',
-    highlights: ['CPU ARM lõi tứ', 'Bộ nhớ trong 8 GB', 'Hỗ trợ MicroSD và Bluetooth Low Energy'],
-    suitableFor: 'Lab mô phỏng thiết bị USB đa chức năng và kiểm thử kiểm soát endpoint.',
-    tag: '03 / MULTI-VECTOR',
-  },
-]
+import catalog from './catalog.json'
 
-export const formatPrice = (amount) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(amount)
+export const products = catalog
+export const productsById = new Map(products.map((product) => [product.id, product]))
+export const optionsById = new Map(products.flatMap((product) =>
+  product.options.map((option) => [option.id, { product, option }])
+))
+

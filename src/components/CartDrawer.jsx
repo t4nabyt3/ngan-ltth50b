@@ -1,76 +1,59 @@
 import { useEffect, useRef } from 'react'
-import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
-import { formatPrice } from '../data/products'
+import { ArrowUpRight, Minus, Plus, Trash2, X } from 'lucide-react'
+import { formatVnd, freeShippingAt, isBlackFridayOffer } from '../data/commerce'
+import OfferPrice from './OfferPrice'
 
-export default function CartDrawer({ open, items, subtotal, onClose, onChangeQty, onRemove, onCheckout }) {
-  const closeButtonRef = useRef(null)
-  const totalQuantity = items.reduce((total, item) => total + item.quantity, 0)
+export default function CartDrawer({ open, items, quote, code, onClose, onChangeQty, onCheckout }) {
+  const dialog = useRef(null)
 
   useEffect(() => {
-    if (!open) return undefined
-
+    const element = dialog.current
+    if (!open) {
+      if (element.open) element.close()
+      return
+    }
+    element.showModal()
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    closeButtonRef.current?.focus()
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-
     return () => {
+      if (element.open) element.close()
       document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [open, onClose])
-
-  if (!open) return null
+  }, [open])
 
   return (
-    <div className="drawer-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <aside className="cart-drawer" aria-label="Giỏ hàng" aria-modal="true" role="dialog">
+    <dialog ref={dialog} className="shop-dialog" aria-labelledby="cart-title" onCancel={(event) => { event.preventDefault(); onClose() }} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <div className="cart-drawer">
         <div className="drawer-header">
-          <div>
-            <span className="eyebrow">ĐƠN HÀNG TẠM TÍNH</span>
-            <h2>Giỏ hàng <span>({totalQuantity})</span></h2>
-          </div>
-          <button ref={closeButtonRef} className="icon-button" onClick={onClose} aria-label="Đóng giỏ hàng"><X size={20} /></button>
+          <h2 id="cart-title">Giỏ hàng ({items.reduce((total, item) => total + item.quantity, 0)})</h2>
+          <button className="icon-button" onClick={onClose} aria-label="Đóng giỏ hàng"><X size={20} /></button>
         </div>
-        {items.length === 0 ? (
-          <div className="empty-cart">
-            <div className="empty-cart-icon"><ShoppingBag size={26} /></div>
-            <h3>Chưa có sản phẩm</h3>
-            <p>Chọn một thiết bị để xem thử quy trình đặt hàng.</p>
-            <button className="button button-dark" onClick={onClose}>Tiếp tục xem sản phẩm</button>
-          </div>
-        ) : (
-          <>
-            <div className="cart-items" aria-live="polite">
-              {items.map(({ product, quantity }) => (
-                <div className="cart-item" key={product.id}>
-                  <div className="cart-item-image"><img src={product.fallbackImage} alt={product.imageAlt} /></div>
-                  <div className="cart-item-info">
-                    <h3>{product.shortName}</h3>
-                    <strong>{formatPrice(product.price)}</strong>
-                    <div className="quantity-control" aria-label={`Số lượng ${product.shortName}`}>
-                      <button onClick={() => onChangeQty(product.id, quantity - 1)} aria-label={`Giảm ${product.shortName}`} disabled={quantity <= 1}><Minus size={13} /></button>
-                      <span aria-live="polite">{quantity}</span>
-                      <button onClick={() => onChangeQty(product.id, quantity + 1)} aria-label={`Tăng ${product.shortName}`} disabled={quantity >= 10}><Plus size={13} /></button>
-                    </div>
-                  </div>
-                  <button className="remove-item" onClick={() => onRemove(product.id)} aria-label={`Xóa ${product.shortName} khỏi giỏ`}><Trash2 size={16} /></button>
+        {items.length === 0 ? <div className="empty-cart"><h3>Giỏ hàng đang trống</h3><button className="button button-dark" onClick={onClose}>Tiếp tục mua sắm</button></div> : <>
+          <div className="cart-items">
+            {items.map(({ product, option, quantity }) => <div className="cart-item" key={option.id}>
+              <div className="cart-item-image">{(option.image || product.image) && <img src={option.image || product.image} alt="" />}</div>
+              <div className="cart-item-info">
+                <h3>{product.name}</h3>
+                {product.options.length > 1 && <small className="block text-neutral-600">{option.label}</small>}
+                <OfferPrice cents={option.cents} quantity={quantity} offer={isBlackFridayOffer(product, option.available)} />
+                <div className="quantity-control" aria-label="Số lượng">
+                  <button onClick={() => onChangeQty(option.id, quantity - 1)} aria-label={`Giảm ${product.name}`} disabled={quantity <= 1}><Minus size={13} /></button>
+                  <span>{quantity}</span>
+                  <button onClick={() => onChangeQty(option.id, quantity + 1)} aria-label={`Tăng ${product.name}`} disabled={quantity >= 10}><Plus size={13} /></button>
                 </div>
-              ))}
-            </div>
-            <div className="drawer-summary">
-              <div className="summary-line"><span>Tạm tính</span><strong>{formatPrice(subtotal)}</strong></div>
-              <p>Chưa bao gồm vận chuyển và thuế. Đây là đơn hàng mô phỏng, không phát sinh thanh toán.</p>
-              <button className="button button-acid button-full" onClick={onCheckout}>Tiếp tục thanh toán <span>↗</span></button>
-              <button className="continue-link" onClick={onClose}>Tiếp tục xem sản phẩm</button>
-            </div>
-          </>
-        )}
-      </aside>
-    </div>
+              </div>
+              <button className="remove-item" onClick={() => onChangeQty(option.id, 0)} aria-label={`Xóa ${product.name}`}><Trash2 size={16} /></button>
+            </div>)}
+          </div>
+          <div className="drawer-summary">
+            <div className="summary-line"><span>Tạm tính</span><strong>{formatVnd(quote.merchandiseVnd)}</strong></div>
+            {quote.saleDiscountVnd > 0 && <p className="offer-savings">Tiết kiệm {formatVnd(quote.saleDiscountVnd)} với Black Friday</p>}
+            {code && <p>Mã đã chọn <strong>{code}</strong></p>}
+            {quote.ships && <p>Miễn phí giao nội địa từ {formatVnd(freeShippingAt)} theo giá gốc hoặc dùng FREESHIP.</p>}
+            <button className="button button-acid button-full" onClick={onCheckout}>Tiếp tục thanh toán <ArrowUpRight size={16} /></button>
+          </div>
+        </>}
+      </div>
+    </dialog>
   )
 }
