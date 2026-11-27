@@ -9,8 +9,8 @@ export default {
       },
       colors: {
         ink: '#101316',
-        acid: '#D3F36B',
-        paper: '#F4F5F0',
+        acid: '#E7BD3F',
+        paper: '#F7F6F2',
       },
       boxShadow: {
         soft: '0 22px 70px rgba(18, 28, 22, .10)',
